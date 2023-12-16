@@ -39,11 +39,11 @@ class MapConverter(object):
         mesh_type = rospy.get_param("~mesh_type", "stl")
         export_dir = rospy.get_param("~export_dir")
         if mesh_type == "stl":
-            with open(export_dir + "/map.stl", 'w') as f:
+            with open(export_dir + "/map.stl", 'wb') as f:
                 mesh.export(f, "stl")
             rospy.loginfo("Exported STL.  You can shut down this node now")
         elif mesh_type == "dae":
-            with open(export_dir + "/map.dae", 'w') as f:
+            with open(export_dir + "/map.dae", 'wb') as f:
                 f.write(trimesh.exchange.dae.export_collada(mesh))
             rospy.loginfo("Exported DAE.  You can shut down this node now")
 
@@ -69,7 +69,7 @@ class MapConverter(object):
         map_array = map_array.astype(np.uint8)
         _, thresh_map = cv2.threshold(
                 map_array, self.threshold, 100, cv2.THRESH_BINARY)
-        image, contours, hierarchy = cv2.findContours(
+        contours, hierarchy = cv2.findContours(
                 thresh_map, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
         # Using cv2.RETR_CCOMP classifies external contours at top level of
         # hierarchy and interior contours at second level.  
@@ -112,7 +112,8 @@ class MapConverter(object):
                 mesh.fix_normals()
             meshes.append(mesh)
         mesh = trimesh.util.concatenate(meshes)
-        mesh.remove_duplicate_faces()
+        #mesh.remove_duplicate_faces()
+        mesh.update_faces(mesh.unique_faces())        
         # mesh will still have internal faces.  Would be better to get
         # all duplicate faces and remove both of them, since duplicate faces
         # are guaranteed to be internal faces

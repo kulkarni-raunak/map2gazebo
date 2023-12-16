@@ -7,6 +7,6 @@ mesh_type: "stl"
 # Minimum threshold value for considering a map cell occupied
 occupied_thresh: 1
 # Height of boxes in gazebo environment
-box_height: 2.0
+box_height: 0.5 #2.0
 
 # Don't specify export_dir in this file as the launchfile will override it.
