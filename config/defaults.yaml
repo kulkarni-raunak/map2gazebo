@@ -3,7 +3,7 @@
 # Topic that the map to convert is being published on
 map_topic: "map"
 # Can be "stl" or "dae"
-mesh_type: "stl"
+mesh_type: "dae"
 # Minimum threshold value for considering a map cell occupied
 occupied_thresh: 1
 # Height of boxes in gazebo environment
