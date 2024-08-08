@@ -25,7 +25,7 @@ def generate_launch_description():
 
         Node(
             package='map2gazebo',
-            executable='map2gazebo.py',
+            executable='map2gazebo',
             name='map2gazebo',
             output='screen',
             parameters=[LaunchConfiguration('params_file')],
