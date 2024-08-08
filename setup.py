@@ -4,6 +4,14 @@ from setuptools import find_packages, setup
 
 package_name = 'map2gazebo'
 
+# Helper function to recursively gather all files in a directory
+def package_files(directory):
+    paths = []
+    for path, _, filenames in os.walk(directory):
+        for filename in filenames:
+            paths.append(os.path.join(path, filename))
+    return paths
+
 setup(
     name=package_name,
     version='0.0.0',
@@ -14,6 +22,9 @@ setup(
         ('share/' + package_name, ['package.xml']),
         # Include all launch files.
         (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*'))),
+        (os.path.join('share', package_name, 'config'), glob(os.path.join('config', '*.[pxy][yma]*'))),
+        (os.path.join('share', package_name, 'models', 'map', 'meshes'), package_files(os.path.join('models', 'map', 'meshes'))),
+        (os.path.join('share', package_name, 'models', 'map'), ['models/map/model.config', 'models/map/model.sdf']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,7 +35,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'map2gazebo = map2gazebo.publisher_member_function:main',
+            'map2gazebo = map2gazebo.map2gazebo:main',
         ],
     },
 )
