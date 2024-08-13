@@ -46,6 +46,14 @@ class MapConverter(Node):
 
         corners = list(np.vstack(contours))
         corners = [c[0] for c in corners]
+
+        for map_idx_x in range(map_array.shape[0]):  # Iterate over rows
+            for map_idx_y in range(map_array.shape[1]):  # Iterate over columns                
+                if cv2.pointPolygonTest(contours[1], (map_idx_x, map_idx_y), False) == -1 or cv2.pointPolygonTest(contours[1], (map_idx_x, map_idx_y), False) == 0:
+                    corners.append([map_idx_x, map_idx_y])
+
+        # TODO: Add the above points to mesh as well.         
+
         self.publish_test_map(corners, map_msg.info, map_msg.header)
         mesh = trimesh.util.concatenate(meshes)
 
