@@ -25,6 +25,8 @@ setup(
         (os.path.join('share', package_name, 'config'), glob(os.path.join('config', '*.[pxy][yma]*'))),
         (os.path.join('share', package_name, 'models', 'map', 'meshes'), package_files(os.path.join('models', 'map', 'meshes'))),
         (os.path.join('share', package_name, 'models', 'map'), ['models/map/model.config', 'models/map/model.sdf']),
+        (os.path.join('share', package_name, 'models', 'unisee', 'meshes'), package_files(os.path.join('models', 'unisee', 'meshes'))),
+        (os.path.join('share', package_name, 'models', 'unisee'), ['models/unisee/model.config', 'models/unisee/model.sdf']),        
     ],
     install_requires=['setuptools'],
     zip_safe=True,

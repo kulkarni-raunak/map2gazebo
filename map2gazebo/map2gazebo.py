@@ -71,7 +71,7 @@ class MapConverter(Node):
         test_map_msg.header = map_header
         test_map_msg.header.stamp = self.get_clock().now().to_msg()
         test_map_msg.info = metadata
-        test_map_msg.data = list(np.ravel(test_map))
+        test_map_msg.data = np.ravel(test_map).astype(np.uint8).tolist()
         self.test_map_pub.publish(test_map_msg)
 
     def get_occupied_regions(self, map_array):
@@ -80,11 +80,15 @@ class MapConverter(Node):
         """
         map_array = map_array.astype(np.uint8)
         _, thresh_map = cv2.threshold(
-                map_array, self.threshold, 100, cv2.THRESH_BINARY)
+                map_array, self.threshold, 255, cv2.THRESH_BINARY)
         contours, hierarchy = cv2.findContours(
-                thresh_map, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+                thresh_map, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        self.get_logger().info(f"#countours are {len(contours)}")
         hierarchy = hierarchy[0]
-        corner_idxs = [i for i in range(len(contours)) if hierarchy[i][3] == -1]
+        # Get contours having no first child or no parent. 
+        # So we get the all the contours with no first child (heirarchy 1) and
+        # no parent (Outer most contour- map boundary) 
+        corner_idxs = [i for i in range(len(contours)) if (hierarchy[i][2] == -1 or hierarchy[i][3] == -1)]
         return [contours[i] for i in corner_idxs]
 
     def contour_to_mesh(self, contour, metadata):
