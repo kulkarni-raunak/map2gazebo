@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<sdf version="1.4">
+  <model name="map">
+    <link name="link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <mesh filename="package://map2gazebo/models/map/meshes/map.dae"/>
+            </geometry>
+        </visual>
+    </link>
+    <static>1</static>
+  </model>
+</sdf>
