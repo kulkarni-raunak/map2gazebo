@@ -42,20 +42,29 @@ class MapConverter(Node):
         # Set all -1 (unknown) values to 0 (unoccupied)
         map_array[map_array < 0] = 0
         contours = self.get_occupied_regions(map_array)
+        # self.get_logger().info(f"contours are {contours}")
         meshes = [self.contour_to_mesh(c, map_msg.info) for c in contours]
 
         corners = list(np.vstack(contours))
         corners = [c[0] for c in corners]
 
+        # surface_points = []
+
         for map_idx_x in range(map_array.shape[0]):  # Iterate over rows
             for map_idx_y in range(map_array.shape[1]):  # Iterate over columns                
-                if cv2.pointPolygonTest(contours[1], (map_idx_x, map_idx_y), False) == -1 or cv2.pointPolygonTest(contours[1], (map_idx_x, map_idx_y), False) == 0:
+                if cv2.pointPolygonTest(contours[-1], (map_idx_x, map_idx_y), False) == -1 or cv2.pointPolygonTest(contours[-1], (map_idx_x, map_idx_y), False) == 0:
                     corners.append([map_idx_x, map_idx_y])
+        #             surface_points.append([map_idx_x, map_idx_y])
 
-        # TODO: Add the above points to mesh as well.         
+        # TODO: Add the above surface points to mesh as well.
+        # Convert the list of points to a NumPy array with the shape (n, 1, 2)
+        # surface = np.array(surface_points, dtype=np.int32).reshape((-1, 1, 2))
+        # self.get_logger().info(f"surface points are {surface}")
+        # meshes.append([self.contour_to_mesh(surface, map_msg.info)])
 
         self.publish_test_map(corners, map_msg.info, map_msg.header)
         mesh = trimesh.util.concatenate(meshes)
+
 
         # Export as STL or DAE
         if self.mesh_type == 'stl':
@@ -91,7 +100,7 @@ class MapConverter(Node):
                 map_array, self.threshold, 255, cv2.THRESH_BINARY)
         contours, hierarchy = cv2.findContours(
                 thresh_map, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        self.get_logger().info(f"#countours are {len(contours)}")
+        self.get_logger().info(f"#contours are {len(contours)}")
         hierarchy = hierarchy[0]
         # Get contours having no first child or no parent. 
         # So we get the all the contours with no first child (heirarchy 1) and
