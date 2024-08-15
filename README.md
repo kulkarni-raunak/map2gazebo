@@ -74,5 +74,5 @@ Open the mesh in software called MesbLab and apply filter called "Surface Recons
 
 ## Kml to PGM converter
 
-Edit the file name in the program with relative paths. This will generate a PGM and YAML file from the provided kml file containing polygon data. Note: A padded layer in added to the generated grid.
+Edit the file name in the program "map2gazebo/kml_to_pgm_yaml.py" with relative paths. This will generate a PGM and YAML file from the provided kml file containing polygon data. Note: A padded layer in added to the generated grid.
 
