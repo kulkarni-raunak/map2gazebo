@@ -48,19 +48,18 @@ class MapConverter(Node):
         corners = list(np.vstack(contours))
         corners = [c[0] for c in corners]
 
-        # surface_points = []
+        surface_points = []
 
         for map_idx_x in range(map_array.shape[0]):  # Iterate over rows
             for map_idx_y in range(map_array.shape[1]):  # Iterate over columns                
                 if cv2.pointPolygonTest(contours[-1], (map_idx_x, map_idx_y), False) == -1 or cv2.pointPolygonTest(contours[-1], (map_idx_x, map_idx_y), False) == 0:
                     corners.append([map_idx_x, map_idx_y])
-        #             surface_points.append([map_idx_x, map_idx_y])
+                    surface_points.append([map_idx_x, map_idx_y])
 
-        # TODO: Add the above surface points to mesh as well.
         # Convert the list of points to a NumPy array with the shape (n, 1, 2)
-        # surface = np.array(surface_points, dtype=np.int32).reshape((-1, 1, 2))
+        surface = np.array(surface_points, dtype=np.int32).reshape((-1, 1, 2))
         # self.get_logger().info(f"surface points are {surface}")
-        # meshes.append([self.contour_to_mesh(surface, map_msg.info)])
+        meshes.append(self.contour_to_mesh(surface, map_msg.info))
 
         self.publish_test_map(corners, map_msg.info, map_msg.header)
         mesh = trimesh.util.concatenate(meshes)
@@ -142,6 +141,42 @@ class MapConverter(Node):
         mesh = trimesh.util.concatenate(meshes)
         mesh.update_faces(mesh.unique_faces())
         return mesh
+    
+    def points_to_mesh(self, points, metadata):
+        """
+        Create a mesh from points lying between contours
+        """
+        height = np.array([0, 0, self.height])
+        vertices = []
+        faces = []
+        for point in points:
+            x, y = point
+            new_vertices = [
+                    coords_to_loc((x, y), metadata),
+                    coords_to_loc((x, y+1), metadata),
+                    coords_to_loc((x+1, y), metadata),
+                    coords_to_loc((x+1, y+1), metadata)]
+            vertices.extend(new_vertices)
+            vertices.extend([v + height for v in new_vertices])
+            faces.append([len(vertices)-8, len(vertices)-6, len(vertices)-4])
+            faces.append([len(vertices)-4, len(vertices)-6, len(vertices)-2])
+            faces.append([len(vertices)-7, len(vertices)-6, len(vertices)-8])
+            faces.append([len(vertices)-5, len(vertices)-6, len(vertices)-7])
+            faces.append([len(vertices)-4, len(vertices)-8, len(vertices)-6])
+            faces.append([len(vertices)-3, len(vertices)-4, len(vertices)-5])
+            faces.append([len(vertices)-1, len(vertices)-6, len(vertices)-4])
+            faces.append([len(vertices)-1, len(vertices)-2, len(vertices)-6])
+            faces.append([len(vertices)-2, len(vertices)-6, len(vertices)-4])
+            faces.append([len(vertices)-1, len(vertices)-5, len(vertices)-7])
+            faces.append([len(vertices)-2, len(vertices)-5, len(vertices)-6])
+            faces.append([len(vertices)-3, len(vertices)-7, len(vertices)-5])
+            
+        mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
+        if not mesh.is_volume:
+            self.get_logger().debug('Fixing mesh normals')
+            mesh.fix_normals()
+        return mesh
+
 
 def coords_to_loc(coords, metadata):
     x, y = coords
