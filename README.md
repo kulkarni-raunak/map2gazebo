@@ -14,7 +14,7 @@ to launch Gazebo pre-populated with the map mesh.
 
 The export directory is specified as a launchfile argument.  Change it using
 ```
-roslaunch map2gazebo map2gazebo.launch export_dir:=/path/to/export_dir
+ros2 launch map2gazebo map2gazebo.launch.py export_dir:=/path/to/export_dir
 ```
 Note that if you change the export directory, `gazebo_world.launch` will not
 work unmodified.
@@ -23,7 +23,7 @@ Default parameters are specified in config/defaults.yaml; the location of the
 YAML parameter file is also a launchfile argument.  To change the defaults,
 make a new YAML parameter file, and run
 ```
-roslaunch map2gazebo map2gazebo.launch params_file:=/path/to/your/params.yaml
+ros2 launch map2gazebo map2gazebo.launch.py params_file:=/path/to/your/params.yaml
 ```
 Alternatively you could just edit the default parameter file (not recommended,
 but I can't stop you).
@@ -67,4 +67,12 @@ pip install --user pycollada
 pip install --user scipy
 pip install --user networkx
 ```
+
+## Suggested after work
+
+Open the mesh in software called MesbLab and apply filter called "Surface Reconstruction: Screened Poisson" under "Remeshing, Simplification and Reconstruction" and save the file. This reduces the size to great extent so that it can be easily rendered in Gazebo (test on Gazebo Garden)  
+
+## Kml to PGM converter
+
+Edit the file name in the program with relative paths. This will generate a PGM and YAML file from the provided kml file containing polygon data. Note: A padded layer in added to the generated grid.
 
