@@ -50,6 +50,9 @@ def create_occupancy_grid(polygon, width, height, resolution, min_lat, min_lon, 
     poly_pixels = np.array(poly_pixels, dtype=np.int32)
     cv2.fillPoly(grid, [poly_pixels], color=255)  # 0 represents free space
 
+    # Flip the grid vertically to correct for inversion
+    grid = cv2.flip(grid, 0)
+
     return grid
 
 def add_padding(grid, padding):
