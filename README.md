@@ -70,7 +70,18 @@ pip install --user networkx
 
 ## Suggested after work
 
-Open the mesh in software called MesbLab and apply filter called "Surface Reconstruction: Screened Poisson" under "Remeshing, Simplification and Reconstruction" and save the file. This reduces the size to great extent so that it can be easily rendered in Gazebo (test on Gazebo Garden)  
+- Open the mesh in software called MesbLab and apply filter called "Surface Reconstruction: Screened Poisson" under "Remeshing, Simplification and Reconstruction" and save the file. This reduces the size to great extent so that it can be easily rendered in Gazebo (test on Gazebo Garden)
+- One can also apply texture to the mesh using MeshLab, go to filters -> Texture -> Set Texture -> Add the png or jpg file. 
+- Add model to Gazebo's resource path. 
+```
+export GZ_SIM_RESOURCE_PATH=$GZ_SIM_RESOURCE_PATH:$WORKSPACE/install/share/map2gazebo/models/
+```
+- Open empty world. `gz sim empty.sdf` and add your model and other models if required. 
+- Save the world to .sdf file using 
+```
+gz service -s /world/empty/generate_world_sdf --reqtype gz.msgs.SdfGeneratorConfig --req 'global_entity_gen_config: { expand_include_tags: { data: true } }' --timeout 1000 --reptype gz.msgs.StringMsg | \
+sed -e 's/^data: "//' -e 's/"$//' -e 's/\\n/\n/g' -e "s/\\\'/'/g" > custom_world.sdf
+```
 
 ## Kml to PGM converter
 
