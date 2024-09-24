@@ -9,4 +9,4 @@ map2gazebo:
     # Height of boxes in gazebo environment
     box_height: 3.0 #2.0
     # Don't specify export_dir in this file as the launchfile will override it.
-    export_dir: "/scenario-simulation/install/share/map2gazebo/models/unisee/meshes/"
+    export_dir: "/scenario-simulation/install/share/map2gazebo/models/square_near_unisee/meshes/"
