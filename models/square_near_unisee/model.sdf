@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
 <sdf version="1.6">
-  <model name="unisee">
+  <model name="square_near_unisee">
     <static>true</static>
     <link name="link">
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://unisee/meshes/map.dae</uri>
+            <uri>model://square_near_unisee/meshes/map.dae</uri>
           </mesh>
         </geometry>
       </visual>

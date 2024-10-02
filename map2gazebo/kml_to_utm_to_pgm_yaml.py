@@ -172,6 +172,7 @@ free_thresh: 0.196
         grid = self.create_occupancy_grid()
         padded_grid, self.min_utm_x, self.min_utm_y = self.add_padding(grid)
         self.save_pgm(padded_grid)
+        # self.save_pgm(grid)
         self.save_yaml(0, 0)  # Origin at (0, 0)
 
 
@@ -185,12 +186,12 @@ pgm_file2 = 'square_near_unisee_00.pgm'
 yaml_file2 = 'square_near_unisee_00.yaml'
 
 # Process map1
-map1 = Map(kml_file1, pgm_file1, yaml_file1)
-map1.process_map()
+map2 = Map(kml_file1, pgm_file1, yaml_file1)
+map2.process_map()
 
 # Process map2
-map2 = Map(kml_file2, pgm_file2, yaml_file2)
-map2.process_map()
+map1 = Map(kml_file2, pgm_file2, yaml_file2)
+map1.process_map()
 
 
 # Calculate shifted origin for map2 relative to map1
