@@ -11,12 +11,35 @@ class Map:
         self.resolution = resolution
         self.yaml_resolution = yaml_resolution
         self.padding = padding
-        self.polygon = self.parse_kml(self.kml_file)
+        self.polygons = self.parse_multiple_polygons(self.kml_file)
         self.transformer_to_utm = Transformer.from_crs("epsg:4326", "epsg:32633", always_xy=True)  # WGS84 to UTM Zone 33N
         self.transformer_to_latlon = Transformer.from_crs("epsg:32633", "epsg:4326", always_xy=True)  # UTM Zone 33N to WGS84
         self.min_utm_x, self.max_utm_x, self.min_utm_y, self.max_utm_y = self.get_map_bounds()
         self.width, self.height = self.calculate_dimensions()
 
+    def parse_multiple_polygons(self, kml_file):
+        """
+        Parse the KML file to extract multiple polygons (lat, lon) coordinates.
+        """
+        tree = ET.parse(kml_file)
+        root = tree.getroot()
+        namespace = {"kml": "http://www.opengis.net/kml/2.2"}
+        
+        polygons = []
+        # Find all Polygon or MultiGeometry coordinates
+        for placemark in root.findall(".//kml:Polygon", namespaces=namespace):
+            coordinates_tag = placemark.find('.//kml:coordinates', namespaces=namespace)
+            coordinates_text = coordinates_tag.text.strip()
+            coordinates = []
+            
+            for coord in coordinates_text.split():
+                lon, lat, _ = map(float, coord.split(','))
+                coordinates.append((lon, lat))
+
+            polygons.append(coordinates)
+        
+        return polygons
+    
     def parse_kml(self, kml_file):
         """
         Parse the KML file to extract the polygon (lat, lon) coordinates.
@@ -35,14 +58,18 @@ class Map:
             coordinates.append((lon, lat))
 
         return coordinates
-
+    
     def get_map_bounds(self):
         """
-        Get UTM bounds of the polygon.
+        Get UTM bounds of all polygons.
         """
-        utm_coords = [self.latlon_to_utm(lon, lat) for lon, lat in self.polygon]
-        utm_x, utm_y = zip(*utm_coords)
-        return min(utm_x), max(utm_x), min(utm_y), max(utm_y)
+        all_coords = []
+        for polygon in self.polygons:
+            utm_coords = [self.latlon_to_utm(lon, lat) for lon, lat in polygon]
+            all_coords.extend(utm_coords)
+        
+        utm_x, utm_y = zip(*all_coords)
+        return min(utm_x), max(utm_x), min(utm_y), max(utm_y)    
 
     def latlon_to_utm(self, lon, lat):
         """
@@ -114,31 +141,35 @@ class Map:
 
     def create_occupancy_grid(self):
         """
-        Create the occupancy grid for the map by filling the polygon.
+        Create the occupancy grid for the map by filling multiple polygons.
         """
-        grid = np.ones((self.height, self.width), dtype=np.uint8) * 0
-        poly_pixels = [self.latlon_to_pixel(lat, lon) for lon, lat in self.polygon]
-        poly_pixels = np.array(poly_pixels, dtype=np.int32)
-        cv2.fillPoly(grid, [poly_pixels], color=255)
+        grid_value = 255 if len(self.polygons) > 1 else 0
+        grid = np.ones((self.height, self.width), dtype=np.uint8) * grid_value
+        for polygon in self.polygons:
+            poly_pixels = [self.latlon_to_pixel(lat, lon) for lon, lat in polygon]
+            poly_pixels = np.array(poly_pixels, dtype=np.int32)
+            cv2.fillPoly(grid, [poly_pixels], color= 255 - grid_value)
+        
         grid = cv2.flip(grid, 0)
         return grid
-
+    
     def add_padding(self, grid):
         """
         Add padding to the grid and adjust UTM coordinates.
         """
         height, width = grid.shape
         diff_in_size = abs(height - width)
+        grid_value = 255 if len(self.polygons) > 1 else 0
         if height > width:
-            padded_grid = np.ones((height + 2 * self.padding, width + diff_in_size + 2 * self.padding), dtype=np.uint8) * 0
+            padded_grid = np.ones((height + 2 * self.padding, width + diff_in_size + 2 * self.padding), dtype=np.uint8) * grid_value
             padded_grid[self.padding:self.padding + height, self.padding + int(diff_in_size / 2):self.padding + width + int(diff_in_size / 2)] = grid
             new_min_utm_x, new_min_utm_y = self.pixel_to_utm(-(self.padding + int(diff_in_size / 2)), -self.padding)
         elif width > height:
-            padded_grid = np.ones((height + diff_in_size + 2 * self.padding, width + 2 * self.padding), dtype=np.uint8) * 0
+            padded_grid = np.ones((height + diff_in_size + 2 * self.padding, width + 2 * self.padding), dtype=np.uint8) * grid_value
             padded_grid[self.padding + int(diff_in_size / 2):self.padding + height + int(diff_in_size / 2), self.padding:self.padding + width] = grid
             new_min_utm_x, new_min_utm_y = self.pixel_to_utm(-self.padding, -(self.padding + int(diff_in_size / 2)))
         else:
-            padded_grid = np.ones((height + 2 * self.padding, width + 2 * self.padding), dtype=np.uint8) * 0
+            padded_grid = np.ones((height + 2 * self.padding, width + 2 * self.padding), dtype=np.uint8) * grid_value
             padded_grid[self.padding:self.padding + height, self.padding:self.padding + width] = grid
             new_min_utm_x, new_min_utm_y = self.pixel_to_utm(-self.padding, -self.padding)
         return padded_grid, new_min_utm_x, new_min_utm_y
@@ -177,48 +208,51 @@ free_thresh: 0.196
 
 
 # Main process example usage
-kml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.kml'
-pgm_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon_00.pgm'
-yaml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon_00.yaml'
+# kml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.kml'
+# pgm_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon_00.pgm'
+# yaml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon_00.yaml'
 
-kml_file2 = 'square_near_unisee.kml'
-pgm_file2 = 'square_near_unisee_00.pgm'
-yaml_file2 = 'square_near_unisee_00.yaml'
+kml_file1 = 'Port_Bremen_Polygon.kml'
+pgm_file1 = 'Port_Bremen_Polygon.pgm'
+yaml_file1 = 'Port_Bremen_Polygon.yaml'
+kml_file2 = 'avoid_area_01.kml'
+pgm_file2 = 'avoid_area_01.pgm'
+yaml_file2 = 'avoid_area_01.yaml'
 
 # Process map1
-map2 = Map(kml_file1, pgm_file1, yaml_file1)
-map2.process_map()
+map1 = Map(kml_file1, pgm_file1, yaml_file1)
+map1.process_map()
 
 # Process map2
-map1 = Map(kml_file2, pgm_file2, yaml_file2)
-map1.process_map()
+map2 = Map(kml_file2, pgm_file2, yaml_file2)
+map2.process_map()
 
 
 # Calculate shifted origin for map2 relative to map1
 origin_x2, origin_y2 = map2.calculate_shifted_origin(map1)
 map2.save_yaml(origin_x2, origin_y2)
 
-kml_file3 = 'small_lake_near_unisee.kml'
-pgm_file3 = 'small_lake_near_unisee_00.pgm'
-yaml_file3 = 'small_lake_near_unisee_00.yaml'
+# kml_file3 = 'small_lake_near_unisee.kml'
+# pgm_file3 = 'small_lake_near_unisee_00.pgm'
+# yaml_file3 = 'small_lake_near_unisee_00.yaml'
 
-map3 = Map(kml_file3, pgm_file3, yaml_file3)
-map3.process_map()
+# map3 = Map(kml_file3, pgm_file3, yaml_file3)
+# map3.process_map()
 
-# Calculate shifted origin for map2 relative to map1
-origin_x3, origin_y3 = map3.calculate_shifted_origin(map1)
-map3.save_yaml(origin_x3, origin_y3)
+# # Calculate shifted origin for map2 relative to map1
+# origin_x3, origin_y3 = map3.calculate_shifted_origin(map1)
+# map3.save_yaml(origin_x3, origin_y3)
 
-kml_file4 = 'test_area_port_of_bremen.kml'
-pgm_file4 = 'test_area_port_of_bremen_00.pgm'
-yaml_file4 = 'test_area_port_of_bremen_00.yaml'
+# kml_file4 = 'test_area_port_of_bremen.kml'
+# pgm_file4 = 'test_area_port_of_bremen_00.pgm'
+# yaml_file4 = 'test_area_port_of_bremen_00.yaml'
 
-map4 = Map(kml_file4, pgm_file4, yaml_file4)
-map4.process_map()
+# map4 = Map(kml_file4, pgm_file4, yaml_file4)
+# map4.process_map()
 
-# Calculate shifted origin for map2 relative to map1
-origin_x4, origin_y4 = map4.calculate_shifted_origin(map1)
-map4.save_yaml(origin_x4, origin_y4)
+# # Calculate shifted origin for map2 relative to map1
+# origin_x4, origin_y4 = map4.calculate_shifted_origin(map1)
+# map4.save_yaml(origin_x4, origin_y4)
 
 
 print("PGM and YAML files created successfully.")
