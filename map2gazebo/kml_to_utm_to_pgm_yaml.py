@@ -14,6 +14,8 @@ class Map:
         self.polygons = self.parse_multiple_polygons(self.kml_file)
         self.transformer_to_utm = Transformer.from_crs("epsg:4326", "epsg:32633", always_xy=True)  # WGS84 to UTM Zone 33N
         self.transformer_to_latlon = Transformer.from_crs("epsg:32633", "epsg:4326", always_xy=True)  # UTM Zone 33N to WGS84
+        # self.transformer_to_utm = Transformer.from_crs("epsg:4326", "epsg:32733", always_xy=True)  # WGS84 to UTM Zone 55S
+        # self.transformer_to_latlon = Transformer.from_crs("epsg:32733", "epsg:4326", always_xy=True)  # UTM Zone 55S to WGS84        
         self.min_utm_x, self.max_utm_x, self.min_utm_y, self.max_utm_y = self.get_map_bounds()
         self.width, self.height = self.calculate_dimensions()
 
@@ -35,6 +37,7 @@ class Map:
             for coord in coordinates_text.split():
                 lon, lat, _ = map(float, coord.split(','))
                 coordinates.append((lon, lat))
+                # coordinates.append((-lon, -lat)) # If in southern hemisphere, TODO: Find exact reason. 
 
             polygons.append(coordinates)
         
@@ -69,6 +72,7 @@ class Map:
             all_coords.extend(utm_coords)
         
         utm_x, utm_y = zip(*all_coords)
+        # utm_y = tuple(-y for y in utm_y if y<0)  # flip y if y is negative values
         return min(utm_x), max(utm_x), min(utm_y), max(utm_y)    
 
     def latlon_to_utm(self, lon, lat):
@@ -209,28 +213,28 @@ free_thresh: 0.196
 
 # Main process example usage
 # kml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.kml'
-# pgm_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon_00.pgm'
-# yaml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon_00.yaml'
+# pgm_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.pgm'
+# yaml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.yaml'
 
-kml_file1 = 'Port_Bremen_Polygon.kml'
-pgm_file1 = 'Port_Bremen_Polygon.pgm'
-yaml_file1 = 'Port_Bremen_Polygon.yaml'
-kml_file2 = 'avoid_area_01.kml'
-pgm_file2 = 'avoid_area_01.pgm'
-yaml_file2 = 'avoid_area_01.yaml'
+kml_file1 = 'sydney_regatta.kml'
+pgm_file1 = 'sydney_regatta.pgm'
+yaml_file1 = 'sydney_regatta.yaml'
+# kml_file2 = 'avoid_area_01.kml'
+# pgm_file2 = 'avoid_area_01.pgm'
+# yaml_file2 = 'avoid_area_01.yaml'
 
 # Process map1
 map1 = Map(kml_file1, pgm_file1, yaml_file1)
 map1.process_map()
 
-# Process map2
-map2 = Map(kml_file2, pgm_file2, yaml_file2)
-map2.process_map()
+# # Process map2
+# map2 = Map(kml_file2, pgm_file2, yaml_file2)
+# map2.process_map()
 
 
-# Calculate shifted origin for map2 relative to map1
-origin_x2, origin_y2 = map2.calculate_shifted_origin(map1)
-map2.save_yaml(origin_x2, origin_y2)
+# # Calculate shifted origin for map2 relative to map1
+# origin_x2, origin_y2 = map2.calculate_shifted_origin(map1)
+# map2.save_yaml(origin_x2, origin_y2)
 
 # kml_file3 = 'small_lake_near_unisee.kml'
 # pgm_file3 = 'small_lake_near_unisee_00.pgm'
