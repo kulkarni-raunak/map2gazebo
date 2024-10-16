@@ -49,17 +49,17 @@ class MapConverter(Node):
         corners = [c[0] for c in corners]
 
         surface_points = []
+        edge_length = 10  # Adjust the edge length as needed
 
-        for map_idx_x in range(map_array.shape[0]):  # Iterate over rows
-            for map_idx_y in range(map_array.shape[1]):  # Iterate over columns                
+        for map_idx_x in range(0, map_array.shape[0], edge_length):  # Iterate over rows
+            for map_idx_y in range(0, map_array.shape[1], edge_length):  # Iterate over columns                
                 if cv2.pointPolygonTest(contours[-1], (map_idx_x, map_idx_y), False) == -1 or cv2.pointPolygonTest(contours[-1], (map_idx_x, map_idx_y), False) == 0:
                     corners.append([map_idx_x, map_idx_y])
                     surface_points.append([map_idx_x, map_idx_y])
 
         # Convert the list of points to a NumPy array with the shape (n, 1, 2)
         surface = np.array(surface_points, dtype=np.int32).reshape((-1, 1, 2))
-        # self.get_logger().info(f"surface points are {surface}")
-        meshes.append(self.contour_to_mesh(surface, map_msg.info))
+        meshes.append(self.contour_to_mesh(surface, map_msg.info, edge_length))
 
         self.publish_test_map(corners, map_msg.info, map_msg.header)
         mesh = trimesh.util.concatenate(meshes)
@@ -107,7 +107,7 @@ class MapConverter(Node):
         corner_idxs = [i for i in range(len(contours)) if (hierarchy[i][2] == -1 or hierarchy[i][3] == -1)]
         return [contours[i] for i in corner_idxs]
 
-    def contour_to_mesh(self, contour, metadata):
+    def contour_to_mesh(self, contour, metadata, edge_length=1):
         height = np.array([0, 0, self.height])
         s3 = 3**0.5 / 3.
         meshes = []
@@ -116,9 +116,9 @@ class MapConverter(Node):
             vertices = []
             new_vertices = [
                     coords_to_loc((x, y), metadata),
-                    coords_to_loc((x, y+1), metadata),
-                    coords_to_loc((x+1, y), metadata),
-                    coords_to_loc((x+1, y+1), metadata)]
+                    coords_to_loc((x, y+edge_length), metadata),
+                    coords_to_loc((x+edge_length, y), metadata),
+                    coords_to_loc((x+edge_length, y+edge_length), metadata)]
             vertices.extend(new_vertices)
             vertices.extend([v + height for v in new_vertices])
             faces = [[0, 2, 4],
