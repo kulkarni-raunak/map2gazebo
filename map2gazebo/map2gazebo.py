@@ -3,6 +3,7 @@
 import cv2
 import numpy as np
 import trimesh
+import trimesh.visual
 from matplotlib.tri import Triangulation
 from rclpy.node import Node
 from rclpy import logging
@@ -64,6 +65,8 @@ class MapConverter(Node):
         self.publish_test_map(corners, map_msg.info, map_msg.header)
         mesh = trimesh.util.concatenate(meshes)
 
+        # Define a color in RGBA format (e.g., green with full opacity)
+        color = [124, 255, 50, 255]  # Grass green color (R=0, G=255, B=0, A=255)
 
         # Export as STL or DAE
         if self.mesh_type == 'stl':
@@ -71,6 +74,8 @@ class MapConverter(Node):
                 mesh.export(f, 'stl')
             self.get_logger().info('Exported STL. You can shut down this node now')
         elif self.mesh_type == 'dae':
+            # Add color to the entire mesh (for instance, a red mesh) NOTE: Only available for dae
+            mesh = add_color_to_mesh(mesh, color)
             with open(f"{self.export_dir}/map.dae", 'wb') as f:
                 f.write(trimesh.exchange.dae.export_collada(mesh))
             self.get_logger().info('Exported DAE. You can shut down this node now')
@@ -176,7 +181,17 @@ class MapConverter(Node):
             self.get_logger().debug('Fixing mesh normals')
             mesh.fix_normals()
         return mesh
-
+    
+def add_color_to_mesh(mesh, color):
+    """
+    Set colors to the mesh's vertices
+    """    
+    # Check if mesh already has visual features
+    if not hasattr(mesh, 'visual'):
+        mesh.visual = trimesh.visual.ColorVisuals(mesh=mesh)
+    # Assign colors to all vertices
+    mesh.visual.vertex_colors = np.tile(color, (len(mesh.vertices), 1))
+    return mesh
 
 def coords_to_loc(coords, metadata):
     x, y = coords
