@@ -139,6 +139,8 @@ class Map:
         origin_x2, origin_y2 = 0, 0
         utm_x2, utm_y2 = self.pixel_to_utm(origin_x2, origin_y2)
         origin_x2, origin_y2 = other_map.utm_to_pixel(utm_x2, utm_y2)
+        origin_x2 -= other_map.padded_grid.shape[1] / 2
+        origin_y2 -= other_map.padded_grid.shape[0] / 2
         origin_x2 *= self.yaml_resolution
         origin_y2 *= self.yaml_resolution
         return origin_x2, origin_y2
@@ -193,6 +195,7 @@ class Map:
 image: {self.pgm_file}
 resolution: {self.yaml_resolution}
 origin: {origin}
+# origin in lon, lat {self.pixel_to_latlon(-origin_x, -origin_y)}
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.196
@@ -204,37 +207,42 @@ free_thresh: 0.196
         """
         High-level method to process a KML file and generate a PGM and YAML file.
         """
-        grid = self.create_occupancy_grid()
-        padded_grid, self.min_utm_x, self.min_utm_y = self.add_padding(grid)
-        self.save_pgm(padded_grid)
+        self.grid = self.create_occupancy_grid()
+        self.padded_grid, self.min_utm_x, self.min_utm_y = self.add_padding(self.grid)
+        self.save_pgm(self.padded_grid)
         # self.save_pgm(grid)
-        self.save_yaml(0, 0)  # Origin at (0, 0)
+        origin_x, origin_y = -self.padded_grid.shape[1] / 2, -self.padded_grid.shape[0] / 2
+        origin_x *= self.yaml_resolution
+        origin_y *= self.yaml_resolution
+        # self.save_yaml(0, 0)  # Origin at (0, 0)
+        self.save_yaml(origin_x, origin_y)  # Origin at (0, 0)
 
 
 # Main process example usage
-# kml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.kml'
-# pgm_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.pgm'
-# yaml_file1 = 'src/submodules/katamaran_nav2_bt/maps/unisee_bremen_polygon.yaml'
+kml_file1 = '/scenario-simulation/Port_bremen/Port_Bremen_Polygon.kml'
+pgm_file1 = '/scenario-simulation/Port_bremen/Port_Bremen_Polygon.pgm'
+yaml_file1 = '/scenario-simulation/Port_bremen/Port_Bremen_Polygon.yaml'
 
-kml_file1 = 'sydney_regatta.kml'
-pgm_file1 = 'sydney_regatta.pgm'
-yaml_file1 = 'sydney_regatta.yaml'
-# kml_file2 = 'avoid_area_01.kml'
-# pgm_file2 = 'avoid_area_01.pgm'
-# yaml_file2 = 'avoid_area_01.yaml'
+# kml_file1 = 'sydney_regatta.kml'
+# pgm_file1 = 'sydney_regatta.pgm'
+# yaml_file1 = 'sydney_regatta.yaml'
+kml_file2 = '/scenario-simulation/Port_bremen/avoid_area_01.kml'
+pgm_file2 = '/scenario-simulation/Port_bremen/avoid_area_01.pgm'
+yaml_file2 = '/scenario-simulation/Port_bremen/avoid_area_01.yaml'
 
 # Process map1
 map1 = Map(kml_file1, pgm_file1, yaml_file1)
 map1.process_map()
 
-# # Process map2
-# map2 = Map(kml_file2, pgm_file2, yaml_file2)
-# map2.process_map()
+# Process map2
+map2 = Map(kml_file2, pgm_file2, yaml_file2)
+map2.process_map()
 
 
-# # Calculate shifted origin for map2 relative to map1
-# origin_x2, origin_y2 = map2.calculate_shifted_origin(map1)
-# map2.save_yaml(origin_x2, origin_y2)
+# Calculate shifted origin for map2 relative to map1
+origin_x2, origin_y2 = map2.calculate_shifted_origin(map1)
+map2.save_yaml(origin_x2, origin_y2)
+# map2.save_yaml(-origin_x2, -origin_y2)
 
 # kml_file3 = 'small_lake_near_unisee.kml'
 # pgm_file3 = 'small_lake_near_unisee_00.pgm'
