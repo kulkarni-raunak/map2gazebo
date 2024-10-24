@@ -113,8 +113,10 @@ class MapConverter(Node):
         return [contours[i] for i in corner_idxs]
 
     def contour_to_mesh(self, contour, metadata, edge_length=1):
+        """
+        Create a mesh from points on countors and points lying between contours
+        """        
         height = np.array([0, 0, self.height])
-        s3 = 3**0.5 / 3.
         meshes = []
         for point in contour:
             x, y = point[0]
